@@ -166,7 +166,12 @@
   OPTION (vivifytier3, 1, 0, 100, "relative tier3 effort") \
   OPTION (walkeffort, 50, 0, 1e6, "effort in per mille") \
   OPTION (walkinitially, 0, 0, 1, "initial local search") \
-  OPTION (warmup, 1, 0, 1, "initialize phases by unit propagation")
+  OPTION (warmup, 1, 0, 1, "initialize phases by unit propagation") \
+  OPTION( mab, 1, 0, 1, "enable MAB") \
+  OPTION( mabcdecimal, 0, 0, 9, "mab const decimal") \
+  OPTION( mabcint, 4, 0, 10, "mab const floor") \
+  OPTION( heuristic, 0, 0, 1, "scoring heuristic (0=VSIDS,1=CHB)") \
+  OPTION( stepchb, 4, 1, 9, "CHB step paramater") \
 
 // clang-format on
 

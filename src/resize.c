@@ -61,12 +61,20 @@ void kissat_increase_size (kissat *solver, unsigned new_size) {
   CREALLOC_VARIABLE_INDEXED (flags, flags);
   NREALLOC_VARIABLE_INDEXED (links, links);
 
+  // MAB
+  if(solver->heuristic==1 || solver->mab)
+	CREALLOC_VARIABLE_INDEXED (unsigned,conflicted_chb);
+  if(solver->mab) CREALLOC_VARIABLE_INDEXED (unsigned, mab_chosen);
+
   CREALLOC_LITERAL_INDEXED (mark, marks);
   CREALLOC_LITERAL_INDEXED (value, values);
   CREALLOC_LITERAL_INDEXED (watches, watches);
 
   reallocate_trail (solver, old_size, new_size);
-  kissat_resize_heap (solver, SCORES, new_size);
+  if(solver->heuristic==0 || solver->mab)
+     kissat_resize_heap (solver, &solver->scores, new_size);
+  if(solver->heuristic==1 || solver->mab)
+     kissat_resize_heap (solver, &solver->scores_chb, new_size);
   kissat_increase_phases (solver, new_size);
 
   solver->size = new_size;
@@ -89,13 +97,20 @@ void kissat_decrease_size (kissat *solver) {
   NREALLOC_VARIABLE_INDEXED (assigned, assigned);
   NREALLOC_VARIABLE_INDEXED (flags, flags);
   NREALLOC_VARIABLE_INDEXED (links, links);
+  
+  if(solver->heuristic==1 || solver->mab)
+     NREALLOC_VARIABLE_INDEXED (unsigned, conflicted_chb);
+  if(solver->mab) NREALLOC_VARIABLE_INDEXED (unsigned, mab_chosen);
 
   NREALLOC_LITERAL_INDEXED (mark, marks);
   NREALLOC_LITERAL_INDEXED (value, values);
   NREALLOC_LITERAL_INDEXED (watches, watches);
 
   reallocate_trail (solver, old_size, new_size);
-  kissat_resize_heap (solver, SCORES, new_size);
+  if(solver->heuristic==0 || solver->mab)
+     kissat_resize_heap (solver, &solver->scores, new_size);
+  if(solver->heuristic==1 || solver->mab)
+     kissat_resize_heap (solver, &solver->scores_chb, new_size);
   kissat_decrease_phases (solver, new_size);
 
   solver->size = new_size;

@@ -117,7 +117,7 @@ static void dump_queue (kissat *solver) {
 }
 
 static void dump_scores (kissat *solver) {
-  heap *heap = SCORES;
+  heap *heap = kissat_get_scores(solver);
   printf ("scores.vars = %u\n", heap->vars);
   printf ("scores.size = %u\n", heap->size);
   for (unsigned i = 0; i < SIZE_STACK (heap->stack); i++)

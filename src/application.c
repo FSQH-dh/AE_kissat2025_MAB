@@ -620,6 +620,17 @@ static bool parse_options (application *application, int argc,
       ERROR ("can not use '--quiet' ('-q') with '--verbose' ('-v')");
   }
 #endif
+  solver->step_chb = 0.1*GET_OPTION(stepchb);
+  solver->heuristic = GET_OPTION(heuristic);
+  solver->mab = GET_OPTION(mab);
+  if(solver->mab) {
+  for (unsigned i=0;i<solver->mab_heuristics;i++) {
+    solver->mab_reward[i] = 0; 
+    solver->mab_select[i] = 0;
+  }
+  solver->mabc = GET_OPTION(mabcint)+0.1*GET_OPTION(mabcdecimal);
+  solver->mab_select[solver->heuristic]++; 
+  }
   return true;
 }
 

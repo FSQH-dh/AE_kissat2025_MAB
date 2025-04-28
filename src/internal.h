@@ -128,6 +128,24 @@ struct kissat {
   heap scores;
   double scinc;
 
+  // CHB 
+  heap scores_chb;
+  unsigned *conflicted_chb;
+  double step_chb;
+  double step_dec_chb;
+  double step_min_chb;
+
+// MAB
+  unsigned heuristic;
+  bool mab;
+  double mabc;
+  double mab_reward[2];
+  unsigned mab_select[2];
+  unsigned mab_heuristics;
+  double mab_decisions;
+  unsigned *mab_chosen;
+  unsigned mab_chosen_tot;
+
   heap schedule;
   double scoreshift;
 
@@ -292,4 +310,9 @@ static inline unsigned kissat_assigned (kissat *solver) {
 
 void kissat_reset_last_learned (kissat *solver);
 
+#endif
+
+#if 1
+// 获取当前分支启发式策略所对应的分数堆
+heap* kissat_get_scores (kissat *solver);
 #endif

@@ -113,8 +113,34 @@ void kissat_bump_analyzed (kissat *solver) {
 
 void kissat_update_scores (kissat *solver) {
   assert (solver->stable);
-  heap *scores = SCORES;
+  heap *scores = kissat_get_scores(solver);
   for (all_variables (idx))
     if (ACTIVE (idx) && !kissat_heap_contains (scores, idx))
       kissat_push_heap (solver, scores, idx);
+}
+
+// CHB
+
+void kissat_bump_chb(kissat * solver, unsigned v, double multiplier) {
+  int64_t age = solver->statistics.conflicts - solver->conflicted_chb[v] + 1;
+  double reward_chb = multiplier / age;
+  double old_score = kissat_get_heap_score (&solver->scores_chb, v);
+  double new_score = solver->step_chb * reward_chb + (1 - solver->step_chb) * old_score;
+  LOG ("new score[%u] = %g vs %g",
+     v, new_score, old_score);
+  kissat_update_heap (solver, &solver->scores_chb, v, new_score);
+}
+
+void kissat_decay_chb(kissat * solver){
+  if (solver->step_chb > solver->step_min_chb) solver->step_chb -= solver->step_dec_chb;
+}
+
+void
+kissat_update_conflicted_chb (kissat * solver)
+{
+flags *flags = solver->flags;
+
+for (all_stack (unsigned, idx, solver->analyzed))
+  if (flags[idx].active)
+      solver->conflicted_chb[idx]=solver->statistics.conflicts;
 }

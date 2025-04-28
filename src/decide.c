@@ -29,13 +29,21 @@ static unsigned last_enqueued_unassigned_variable (kissat *solver) {
   return res;
 }
 
-static unsigned largest_score_unassigned_variable (kissat *solver) {
-  heap *scores = SCORES;
+static unsigned largest_score_unassigned_variable (kissat *solver,heap* scores) {
   unsigned res = kissat_max_heap (scores);
   const value *const values = solver->values;
   while (values[LIT (res)]) {
     kissat_pop_max_heap (solver, scores);
     res = kissat_max_heap (scores);
+  }
+
+  // MAB
+  if(solver->mab) {
+    solver->mab_decisions++;
+    if(!solver->mab_chosen[res]){
+      solver->mab_chosen_tot++;
+      solver->mab_chosen[res] = 1;
+    }
   }
 #if defined(LOGGING) || defined(CHECK_HEAP)
   const double score = kissat_get_heap_score (scores, res);
@@ -133,7 +141,8 @@ unsigned kissat_next_decision_variable (kissat *solver) {
 #ifdef LOGGING
       type = "maximum score";
 #endif
-      res = largest_score_unassigned_variable (solver);
+      heap* scores = kissat_get_scores (solver);
+      res = largest_score_unassigned_variable (solver,scores);
       INC (score_decisions);
     } else {
 #ifdef LOGGING

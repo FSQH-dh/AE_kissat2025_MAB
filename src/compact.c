@@ -113,6 +113,9 @@ static void compact_literal (kissat *solver, unsigned dst_lit,
   const unsigned not_dst_lit = NOT (dst_lit);
   solver->values[dst_lit] = solver->values[src_lit];
   solver->values[not_dst_lit] = solver->values[not_src_lit];
+  if(solver->heuristic==1 || solver->mab) 
+	 solver->conflicted_chb[dst_idx] = solver->conflicted_chb[src_idx];
+  if(solver->mab) solver->mab_chosen[dst_idx] = solver->mab_chosen[src_idx];
 }
 
 static unsigned map_idx (kissat *solver, unsigned iidx) {
@@ -202,7 +205,11 @@ static void compact_scores (kissat *solver, heap *old_scores,
   }
 
   kissat_release_heap (solver, old_scores);
-  *old_scores = new_scores;
+  // *old_scores = new_scores;
+  if(solver->heuristic==0)
+     solver->scores = new_scores;
+  if(solver->heuristic==1)
+     solver->scores_chb = new_scores;
 }
 
 static void compact_trail (kissat *solver) {
@@ -361,9 +368,23 @@ void kissat_finalize_compacting (kissat *solver, unsigned vars,
   memset (solver->values + 2 * vars, 0, 2 * reduced * sizeof (value));
   memset (solver->watches + 2 * vars, 0, 2 * reduced * sizeof (watches));
 
+  if(solver->heuristic==1 || solver->mab) 
+	memset (solver->conflicted_chb + vars, 0, reduced * sizeof (unsigned));
+  if(solver->mab) memset (solver->mab_chosen + vars, 0, reduced * sizeof (unsigned));
+
   compact_queue (solver);
   compact_stack (solver, &solver->sweep_schedule);
-  compact_scores (solver, SCORES, vars);
+
+  // MAB
+  if(solver->mab){
+    unsigned old_heuristic = solver->heuristic;
+    solver->heuristic = 0;
+    compact_scores (solver, &solver->scores,vars);
+    solver->heuristic = 1;
+    compact_scores (solver, &solver->scores_chb,vars);
+          solver->heuristic = old_heuristic;
+  }else compact_scores (solver, kissat_get_scores(solver),vars);
+
   compact_frames (solver);
   compact_export (solver, vars);
   compact_best_and_target_values (solver, vars);

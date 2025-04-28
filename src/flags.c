@@ -15,12 +15,21 @@ static inline void activate_literal (kissat *solver, unsigned lit) {
   solver->active++;
   INC (variables_activated);
   kissat_enqueue (solver, idx);
-  const double score = 1.0 - 1.0 / solver->statistics.variables_activated;
-  kissat_update_heap (solver, &solver->scores, idx, score);
+  if(solver->heuristic==0)
+  {
+    const double score = 1.0 - 1.0 / solver->statistics.variables_activated;
+    kissat_update_heap (solver, &solver->scores, idx, score);
+  }
   if (solver->stable) {
     const unsigned lit = LIT (idx);
     if (!VALUE (lit))
-      kissat_push_heap (solver, &solver->scores, idx);
+    {
+      // MAB
+      if(solver->mab) {
+        kissat_push_heap (solver,&solver->scores, idx);
+        kissat_push_heap (solver, &solver->scores_chb, idx);
+      }else kissat_push_heap (solver, kissat_get_scores(solver), idx);
+    }
   }
   assert (solver->unassigned < UINT_MAX);
   solver->unassigned++;
@@ -43,8 +52,16 @@ static inline void deactivate_variable (kissat *solver, flags *f,
   assert (solver->active > 0);
   solver->active--;
   kissat_dequeue (solver, idx);
-  if (kissat_heap_contains (SCORES, idx))
-    kissat_pop_heap (solver, SCORES, idx);
+  // MAB
+  if(solver->mab){
+    if (kissat_heap_contains (&solver->scores, idx))
+          kissat_pop_heap (solver, &solver->scores, idx);
+    if (kissat_heap_contains (&solver->scores_chb, idx))
+          kissat_pop_heap (solver,&solver->scores_chb, idx);
+  }else{
+    if (kissat_heap_contains (kissat_get_scores(solver), idx))
+          kissat_pop_heap (solver, kissat_get_scores(solver), idx);
+  }
 }
 
 void kissat_activate_literal (kissat *solver, unsigned lit) {

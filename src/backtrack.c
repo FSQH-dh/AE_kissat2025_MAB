@@ -90,7 +90,7 @@ void kissat_backtrack_without_updating_phases (kissat *solver,
 
   unsigned *q = new_end;
   if (solver->stable) {
-    heap *scores = SCORES;
+    heap* scores = kissat_get_scores (solver);
     for (const unsigned *p = q; p != old_end; p++) {
       const unsigned lit = *p;
       const unsigned idx = IDX (lit);

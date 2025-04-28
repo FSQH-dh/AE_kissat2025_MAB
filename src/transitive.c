@@ -269,7 +269,7 @@ static inline unsigned less_focused_transitive (kissat *solver,
 
 static void sort_stable_transitive (kissat *solver, unsigneds *probes) {
   const flags *const flags = solver->flags;
-  const heap *const scores = SCORES;
+  const heap *const scores = kissat_get_scores(solver);
   SORT_STACK (unsigned, *probes, LESS_STABLE_PROBE);
 }
 
