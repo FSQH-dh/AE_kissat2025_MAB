@@ -542,6 +542,9 @@ int kissat_analyze (kissat *solver, clause *conflict) {
   do {
     LOGCLS (conflict, "analyzing conflict %" PRIu64, CONFLICTS);
     unsigned conflict_level;
+
+    if(!solver->probing && solver->stable && solver->mab) solver->mab_conflicts++;
+    
     if (one_literal_on_conflict_level (solver, conflict, &conflict_level))
       res = 1;
     else if (!conflict_level)

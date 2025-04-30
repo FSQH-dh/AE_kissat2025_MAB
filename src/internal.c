@@ -49,6 +49,7 @@ kissat *kissat_init (void) {
   solver->mab_heuristics = 2;
   solver-> mab_decisions = 0;
   solver-> mab_chosen_tot = 0;
+  solver->mab_conflicts = 0;
 #ifndef NDEBUG
   kissat_init_checker (solver);
 #endif
