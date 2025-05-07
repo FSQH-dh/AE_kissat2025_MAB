@@ -110,27 +110,70 @@ static unsigned reuse_trail (kissat *solver) {
   return res;
 }
 
-void restart_mab(kissat * solver){
-	unsigned stable_restarts = 0;
-	solver->mab_reward[solver->heuristic] += log2(solver->mab_decisions)/log2(solver->mab_conflicts);
-	for (all_variables (idx)) solver->mab_chosen[idx]=0;
-	solver->mab_chosen_tot = 0;
-	solver->mab_decisions = 0;
-  solver->mab_conflicts = 0;
-	for(unsigned i=0;i<solver->mab_heuristics;i++) stable_restarts +=  solver->mab_select[i];
-	if(stable_restarts < solver->mab_heuristics) {
-		solver->heuristic = solver->heuristic==0?1:0; 
-	}else{
-		double ucb[2];
-		solver->heuristic = 0;
-		for(unsigned i=0;i<solver->mab_heuristics;i++) {
-		     ucb[i] = solver->mab_reward[i]/solver->mab_select[i] + sqrt(solver->mabc*log(stable_restarts+1)/solver->mab_select[i]);
-		     if(i!=0 && ucb[i]>ucb[solver->heuristic]) solver->heuristic = i;
-		  }
-	}
-	solver->mab_select[solver->heuristic]++; 
-}
+void restart_mab(kissat *solver) {
+    // Reset MAB tracking variables
+    unsigned stable_restarts = 0;
+    solver->mab_reward[solver->heuristic] += log2(solver->mab_decisions) / log2(solver->mab_conflicts);
+    
+    // Clear per-variable MAB data
+    for (all_variables(idx)) {
+        solver->mab_chosen[idx] = 0;
+    }
+    solver->mab_chosen_tot = 0;
+    solver->mab_decisions = 0;
+    solver->mab_conflicts = 0;
+    
+    // Count stable restarts across all heuristics
+    for (unsigned i = 0; i < solver->mab_heuristics; i++) {
+        stable_restarts += solver->mab_select[i];
+    }
 
+    // Track recent gains with momentum
+    static double recent_gains[10] = {0};
+    static int gain_index = 0;
+    static double momentum = 1.0;
+
+    double current_gain = solver->mab_reward[solver->heuristic] / solver->mab_select[solver->heuristic];
+    recent_gains[gain_index] = current_gain;
+    gain_index = (gain_index + 1) % 10;
+
+    // Compute average gain over recent window
+    double avg_gain = 0;
+    for (int i = 0; i < 10; i++) {
+        avg_gain += recent_gains[i];
+    }
+    avg_gain /= 10;
+
+    // Update momentum based on performance
+    if (current_gain > avg_gain) {
+        momentum *= 1.1;
+    } else {
+        momentum *= 0.9;
+    }
+
+    // Compute adaptive exploration parameter
+    double adaptive_c = solver->mabc / (momentum * (stable_restarts + 1));
+
+    // Select next heuristic
+    if (stable_restarts < solver->mab_heuristics) {
+        // Exploration phase: alternate between first two heuristics
+        solver->heuristic = solver->heuristic == 0 ? 1 : 0;
+    } else {
+        // UCB-based selection
+        double ucb[2];
+        solver->heuristic = 0;
+        for (unsigned i = 0; i < solver->mab_heuristics; i++) {
+            ucb[i] = solver->mab_reward[i] / solver->mab_select[i] 
+                   + sqrt(adaptive_c * log(stable_restarts + 1) / solver->mab_select[i]);
+            if (i != 0 && ucb[i] > ucb[solver->heuristic]) {
+                solver->heuristic = i;
+            }
+        }
+    }
+    
+    // Update selection count for chosen heuristic
+    solver->mab_select[solver->heuristic]++;
+}
 
 void kissat_restart (kissat *solver) {
   START (restart);
