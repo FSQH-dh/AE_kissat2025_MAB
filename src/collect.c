@@ -220,7 +220,8 @@ static void move_redundant_clauses_to_the_end (kissat *solver,
 #endif
   clause *begin = (clause *) (BEGIN_STACK (solver->arena) + ref);
   clause *end = (clause *) END_STACK (solver->arena);
-  size_t bytes_redundant = (char *) end - (char *) begin;
+  assert ((char *) begin <= (char *) end);
+  size_t bytes_redundant = (size_t) ((char *) end - (char *) begin);
   kissat_phase (solver, "move", GET (moved),
                 "moving redundant clauses of %s to the end",
                 FORMAT_BYTES (bytes_redundant));
